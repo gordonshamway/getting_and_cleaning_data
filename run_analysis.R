@@ -3,34 +3,8 @@
 url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 download.file(url,destfile="file.zip", method="curl")
 
-#extract the data
+#extract the file in the working directory
 unzip("file.zip",list=TRUE, exdir = temp, unzip="internal")
-
-#build the dataset
-files <- filelist$Name
-merge("file.zip", files)
-
-merge <- function(zipfile) {
-    # Create a name for the dir where we'll unzip
-    tmp_folder <- tempfile()
-    # Create the dir using that name
-    dir.create(tmp_folder)
-    # Unzip the file into the dir
-    unzip(zipfile, exdir = tmp_folder)
-    # Get a list of csv files in the dir
-    files <- list.files(tmp_folder)
-    files_train <- files[grep(".train\\.txt$", files)]
-    files_test <- files[grep(".test\\.txt$", files)]
-    final_files <- c(files_train, files_test)
-    
-    # Create a list of the imported csv files
-    #list is bad make a combined big table if possible
-    csv.data <- sapply(final_files, function(f) {
-      fp <- file.path(tmp_folder, f)
-      return(read.csv(fp))
-    }, simplify = TRUE)
-    return(csv.data)
-}
 
 #read in common stuff
 ########################
@@ -39,6 +13,18 @@ activity_labels <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR D
 
 #read in column names
 features <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/features.txt")
+
+#Read in Training-Stuff
+#########################
+#read in subjects
+train_subjects <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/train/subject_test.txt")
+
+#read in data
+train <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/train/X_train.txt")
+
+#read in results
+train_results <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/train/y_train.txt")
+
 
 #Read in Test-Stuff
 #########################
@@ -53,10 +39,12 @@ test_results <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Data
 
 #setting colnames of the data
 colnames(test) <- features$V2
+colnames(training) <- features$V2
 
 #build up whole test dataset
-frame <- data.frame(test_subjects, test, test_results)
-#TODO: Add second Data frame for Training data and join it with test-data to build a final dataframe
+test_frame <- data.frame(test_subjects, test, test_results)
+train_frame <- data.frame(train_subjects, train, train_results)
+frame <- data.frame(train_frame, test_frame)
 
 #make up good column names
 colnames(frame)[1] <- "subject"
@@ -65,16 +53,16 @@ colnames(frame)[ncol(frame)] <- "id"
 #join real activity labels with activity numbers
 library(plyr)
 colnames(activity_labels) <- c("id","activity")
-test_set <- arrange(join(frame, activity_labels), id)
-test_set <- test_set[-563]
+frame <- arrange(join(frame, activity_labels), id)
+frame <- test_set[-563]
 
 #just keep the std and mean columns
-means <- grep("mean" ,colnames(test_set),value=TRUE)
-stds <- means <- grep("std" ,colnames(test_set),value=TRUE)
+means <- grep("mean" ,colnames(frame),value=TRUE)
+stds <- means <- grep("std" ,colnames(frame),value=TRUE)
 variable_filter <- c(means,stds)
 
 #I have to filter the combined test and training dataset on those variables
-keeped <- test_set[,(names(test_set) %in% variable_filter)]
+keeped <- frame[,(names(frame) %in% variable_filter)]
 
 #clean the colum names
 names(keeped) <- gsub("\\.","", names(keeped),)
