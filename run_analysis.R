@@ -69,3 +69,22 @@ test_set <- arrange(join(frame, activity_labels), id)
 test_set <- test_set[-563]
 
 #just keep the std and mean columns
+means <- grep("mean" ,colnames(test_set),value=TRUE)
+stds <- means <- grep("std" ,colnames(test_set),value=TRUE)
+variable_filter <- c(means,stds)
+
+#I have to filter the combined test and training dataset on those variables
+keeped <- test_set[,(names(test_set) %in% variable_filter)]
+
+#clean the colum names
+names(keeped) <- gsub("\\.","", names(keeped),)
+names(keeped) <- gsub("Acc","Accelerometer-", names(keeped),)
+names(keeped) <- gsub("Gyro","Gyroscope-", names(keeped),)
+names(keeped) <- gsub("X$","-X-Axis", names(keeped),)
+names(keeped) <- gsub("Y$","-Y-Axis", names(keeped),)
+names(keeped) <- gsub("Z$","-Z-Axis", names(keeped),)
+names(keeped) <- gsub("^t","time-", names(keeped),)
+names(keeped) <- gsub("^f","frequency-", names(keeped),)
+names(keeped) <- gsub("jerk","jerk-", names(keeped),)
+names(keeped) <- tolower(names(keeped))
+names(keeped) <- gsub("mag","mag-", names(keeped),)
