@@ -32,13 +32,40 @@ merge <- function(zipfile) {
     return(csv.data)
 }
 
+#read in common stuff
+########################
+#read in activity labels
+activity_labels <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/activity_labels.txt")
 
-#Merges the training and the test sets to create one data set.
+#read in column names
+features <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/features.txt")
 
-#Extracts only the measurements on the mean and standard deviation for each measurement.
+#Read in Test-Stuff
+#########################
+#read in subjects
+test_subjects <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/test/subject_test.txt")
 
-#Uses descriptive activity names to name the activities in the data set
+#read in data
+test <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/test/X_test.txt")
 
-#Appropriately labels the data set with descriptive variable names. 
+#read in results
+test_results <- read.table("/Users/stefan/getting_and_cleaning_data/UCI HAR Dataset/test/y_test.txt")
 
-#From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+#setting colnames of the data
+colnames(test) <- features$V2
+
+#build up whole test dataset
+frame <- data.frame(test_subjects, test, test_results)
+#TODO: Add second Data frame for Training data and join it with test-data to build a final dataframe
+
+#make up good column names
+colnames(frame)[1] <- "subject"
+colnames(frame)[ncol(frame)] <- "id"
+
+#join real activity labels with activity numbers
+library(plyr)
+colnames(activity_labels) <- c("id","activity")
+test_set <- arrange(join(frame, activity_labels), id)
+test_set <- test_set[-563]
+
+#just keep the std and mean columns
